@@ -1,0 +1,160 @@
+﻿Create an account on www.github.com.  The account will be owned by you and associated with TT’s repositories.  Get Filip to give you user access to the Trading Technologies repositories.
+
+
+Authentication
+The following link describes how to create the keys necessary to authenticate with github:  https://help.github.com/articles/generating-ssh-keys
+
+
+Global Settings
+Git stores your user settings in the file ~/.gitconfig.  You can edit the file manually or use git commands.  Make sure to set the following commands.
+git config --global user.name "Your Name"
+git config --global user.email Your.Name@tradingtechnologies.com
+git config --global core.editor "<vi|emacs|etc>"
+Graphical Diff/Merge
+The following instructions show how to download and configure meld to be the diff and merge tool for git.  Our git version has built in support for meld.  No extra script wrappers are necessary.
+Getting Meld
+Download from www.meldmerge.org.  The file, meld-VERSION.tar.xz will likely be in ~/Downloads if you used chrome.
+Extract tar file: tar -xJf meld-VERSION.tar.xz
+Add the directory meld-version/bin to your PATH environment variable.
+You should be able to do meld from the command and line and the program should open.
+Integrating with Git
+If you want to try out meld without making any changes to your .gitconfig, you can use the --extcmd option of difftool to use meld.  This option will tell git to ignore what’s in your .gitconfig and use meld for this command only.
+git difftool --extcmd=meld
+git mergetool --tool=meld (for conflict resolution)
+
+
+To set meld to be the default choice for git difftool and git mergetool add the following to your ~/.gitconfig:
+[diff]
+        tool = meld
+[merge]
+        tool = meld
+Aliases
+The following aliases are used in this document.  They are shown as they should appear in the ~/.gitconfig file.
+[alias]
+glog = log --graph --date-order --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+myglog = log --graph --date-order --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --author="YOUR_NAME"
+
+
+Create Local Repository
+git clone URL DIRECTORY
+URL - Get this from github (typical debesys value is  git@github.com:tradingtechnologies/debesys.git)
+DIRECTORY - Optional to install in some other directory than the default.  If omitted, the directory will be named debesys.
+
+
+git submodule init
+git submodule update
+These two commands will copy the submodule to the local repository.
+Fetching Latest Master
+It’s important to keep the local master and origin master pointing to the same commit.  This is important when merging a branch to master and prior to creating a branch.  Prior to performing these steps, make sure changes on the current branch are committed or stashed.  If the change is on a submodule, make sure to be at the root of the submodule (e.g., debesys/ext).
+git checkout master
+git fetch                      (This causes new commits to be added to your local repository.)
+git merge origin/master (This merge should be a fast-forward merge.)
+(git pull combines git fetch and git merge origin/master)
+git submodule update (This isn’t necessary when working inside a submodule.)
+
+
+Single Developer Code Changes
+Prior to starting new development, it’s important to get your local repository up to date with the origin.  Otherwise your development will start based on old file versions and the eventual commit will be more difficult.  See Fetching Latest Master for the commands.
+
+
+The first step is to create a branch and cause git to track that newly created branch.
+git branch [branch_name] (creates a branch named branch_name)
+git checkout [branch_name] (subsequent commits affect this branch, but nothing will change since the branch was created from master)
+
+
+Alternatively, these two commands can be combined as
+git checkout -b [branch_name]
+
+
+If you are not currently on master (i.e., working on some other development), make sure all the changes on that branch are committed (or stashed) prior to switching branches (git status will verify).
+
+
+Make code changes, test, and commit the units of work.  Changes to the submodule can be included by adding the submodule to the commit.  The submodule changes need to be committed within the submodule.  Once the changes are ready to be reviewed, make a final commit, git commit.  Push the changes to github’s repository via git push origin [branch_name].
+
+
+To alert other users to review the work, issue a pull request.  On github, select the appropriate repository.  Select the Pull Request button near the top.  Change the “head branch” choice to your branch.  To alert users, do @THEIRNAME in the beginning.
+
+
+Subsequent code changes can be pushed with the same command, git push origin [branch_name], but additional pull requests are not necessary.
+
+
+Proper Commit Message Format
+The summary line should contain the component, a colon, and then a short message (e.g., logger: Updates based on code review comment).
+Commit messages are important in Git. Everyone should follow the format described here. http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+Rebasing (Optional Prior To Merging)
+In some cases it makes sense to rebase your branch prior to merging.  Only rebase if your branch hasn’t been shared with other developers.  A benefit to rebasing is that the history of master’s commits will be cleaner.  Without rebasing merging a private branch which diverged many commits prior may include files other than the changes on your branch in the history. 
+
+
+In some cases it’s beneficial to squash several commits into a single commit.  For example, to combine code changes and the final touches from a code review.  While checked out to your [branch_name], do git rebase -i COMMIT.  The COMMIT should be the parent of your first commit.  In place of COMMIT, you could substitute the HEAD tilde syntax.  If you had two commits to squash into one, use HEAD~2 since HEAD~2 is the current commit’s first parent’s first parent.  
+
+
+Regardless of how you specify the commit, the command will open an editor with your commits.  A legend will instruct you to type squash (or just s) to squash the commit.  Once the editor is closed all the commits will be squashed into one.  This command can be used for many other uses, squashing is just one.
+
+
+Prior to rebasing, it’s important to get your local repository up to date with the origin. See Fetching Latest Master for the commands. While checked out to your [branch_name], do git rebase master.  
+
+
+When merging, you will receive an error indicating that your branch could not be pushed to the origin.  This is expected and benign since your branch’s history has changed.
+Merging to Master
+Prior to merging, it’s important to get your local repository up to date with the origin. See Fetching Latest Master for the commands. Origin/master and your branch are involved, to see them both in the history do git glog origin/master [branch_name] (note: the glog alias is shown above).  On the master branch (git checkout master), merge the branch into master via git merge [branch_name].  
+
+
+<Under Construction> If there are conflicts in the merge, the merge command will fail and git will list all the files with conflicts and  place conflict markers in each file.  You must resolve the conflicts to complete the merge.  This can be done by opening each file in your favorite editor and resolving conflicts.  Once completed, git add the_file to inform git the conflict has been resolved.  Conflicts can also be resolved with graphical tools.   Run git mergetool and git will open each file in the merge tool.  It’s not necessary to git add the_file if you use git mergetool, it’s done for you.  Do git commit to finish the conflict resolution.  </Under Construction>
+
+
+Perform any necessary testing to ensure the newly merged branch does not conflict branches merged during the development.  Minimally recompile all.   Push the new master to the origin/master via git push (if a rebase was done, git push origin master may be preferred to avoid the error that [branch_name] failed to push)..  
+Now that the branch is no longer needed, it can be deleted.  To delete remotely do git push origin --delete [branch_name].  To delete the branch locally do git branch -d [branch_name].
+Stashing
+Stashing allows switching between branches without unnecessary commits.  Uncommitted files as well as changes to tracked files will be preserved.  The stash will be associated with the current branch.  To view the stash list, do git stash list.
+
+
+To stash the changes of the repository, do git stash save [OPTIONAL MESSAGE]
+After stashing, it’s safe to switch to some other branch and perform work.  Once that work is finished, the stashed worked can be retrieved.  Before restoring the stash, switch back to the branch associated with the stash via git checkout [branch_name].
+
+
+Use the following command to restore and delete the stash: git stash pop stash@\{NUMBER\}.  The backslashes are to escape the curly braces to avoid shell interpretation.  If the stash reference is omitted, it will default to stash@{0} (the latest stash).
+Updates to Submodules
+To check for submodule updates switch to the master branch via git branch master.  Then run git status.  If changes show up then do git submodule update.
+
+
+Sharing Development Branches
+In order to merge system wide functionality at the same time, it may be convenient to share a development branch.  One developer should create the branch and push it to github the same way a private development is created (git branch -b [branch_name]) and pushed (git push origin [branch_name]).  Once created and pushed, other developers can get the shared branch by Fetching Latest Master.  To verify the shared branch has been downloaded, use the command git branch -a in the local repository where the latest master was fetched.  To create a local tracking branch do git checkout -t origin/[shared_branch_name].
+
+
+After making changes, make sure to fetch the latest version of the shared branch similar to fetching the latest master (perhaps just say this should be git pull then git merge origin/[shared_branch]).  Changes should be merged onto the origin/shared_branch and pushed via git push origin [shared_branch_name].
+Useful Commands
+git show --pretty="format:" --name-only commit-1..commit-2 | sort | uniq
+This command is useful to see all the files modified between two commits.  This is helpful when switching to a branch after a long break and wanting to refresh in your mind what’s been done on the branch.  It would be useful to have some command take the branch name as input and generate commit-1 and commit 2.
+
+
+git diff MyLastestCommit...CommitToMergeTo --name-only
+This command shows all the changes made since my branch diverged from master and the current state of master which I’m about to merge into.  This can be useful during the merge process after fetching the master to check if there are potential conflicts.  To see all the changes remove the --name-only.
+
+
+git log -p <file> or
+gitk <file>
+These commands will show the history of a particular file.  
+
+
+git diff-tree --no-commit-id --name-only -r commit
+Show the files changes on a particular commit.
+
+
+git rev-parse --short HEAD
+git rev-parse --short HEAD~1
+git rev-parse --short HEAD~2
+git rev-parse --short HEAD~N
+These commands are useful to explore how the tilde and carat expansion work.  This command will print the hash of HEAD, HEAD~1, etc.  
+Concepts
+Master is reserved label name create by git.  If no other label, often “master” is assumed.
+
+
+HEAD is a special label that points to the parent of your working directory.
+
+
+The origin is the default repository the machine’s repository came from.  In our case it’s typically github.
+
+
+Other Resources
+This is a nice visual explanation of git commands.
+http://marklodato.github.com/visual-git-guide/index-en.html
